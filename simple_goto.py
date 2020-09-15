@@ -26,6 +26,8 @@ right = -86.240335
 left = -86.243146
 # sleep
 nap = .2
+# waypoints array
+waypoints = []
 
 
 # FUNCTIONS (and some usages of the functions)
@@ -123,7 +125,8 @@ def arm_and_takeoff(aTargetAltitude):
         # Break and return from function just below target altitude.
         if vehicle.location.global_relative_frame.alt >= aTargetAltitude * 0.95:
             print("Reached target altitude")
-            break
+            waypoints.append((vehicle.location.global_frame.lat, vehicle.location.global_frame.lon))
+            break 
 
 
 # find the black box
@@ -144,8 +147,9 @@ def find_black_box():
         #print(remaining_distance)
         if remaining_distance <= .5:
             print("Waypoint reached")
+            waypoints.append((vehicle.location.global_frame.lat, vehicle.location.global_frame.lon))
             break
-
+        
         time.sleep(nap)
 
     # start the search algorithm
@@ -173,6 +177,7 @@ def find_black_box():
                     remaining_distance = get_distance_meters(vehicle.location.global_frame, target)
                     if remaining_distance <= .5:
                         print("Waypoint reached")
+                        waypoints.append((vehicle.location.global_frame.lat, vehicle.location.global_frame.lon))
                         break
 
                     time.sleep(nap)
@@ -199,6 +204,7 @@ def find_black_box():
                     remaining_distance = get_distance_meters(vehicle.location.global_frame, target)
                     if remaining_distance <= .5:
                         print("Waypoint reached")
+                        waypoints.append((vehicle.location.global_frame.lat, vehicle.location.global_frame.lon))
                         break
 
                     time.sleep(nap)
@@ -223,6 +229,7 @@ def find_black_box():
             remaining_distance = get_distance_meters(vehicle.location.global_frame, target)
             if remaining_distance <= .5:
                 print("Waypoint reached")
+                waypoints.append((vehicle.location.global_frame.lat, vehicle.location.global_frame.lon))
                 break
 
             time.sleep(nap)
@@ -272,10 +279,11 @@ if target_coords:
     while vehicle.mode.name=="GUIDED":
         remaining_distance = get_distance_meters(vehicle.location.global_frame, target_coords)
         if remaining_distance <= .5:
-            print("Above black box")
+            print("Above black box!")
+            waypoints.append((vehicle.location.global_frame.lat, vehicle.location.global_frame.lon))
             break
         time.sleep(nap)
-    print("Landing")
+    print("Landing...")
     vehicle.mode = VehicleMode("LAND")
 
 else:
@@ -286,14 +294,20 @@ else:
 # lower down onto black box
 final_lat = vehicle.location.global_frame.lat
 final_lon = vehicle.location.global_frame.lon
+waypoints.append((final_lat, final_lon))
 out_file.write("\nUAV landing location: " + str(final_lat) + ", " + str(final_lon))
 
 
 # print time data
 end = datetime.now().replace(microsecond=0)
-out_file.write("\nStarting time: " + str(start))
+out_file.write("\n\nStarting time: " + str(start))
 out_file.write("\nEnding time: " + str(end))
-out_file.write("\nTime taken to locate box: " + str(end - start) + "\n")
+out_file.write("\nTime taken to locate box: " + str(end - start))
+
+
+# print log of waypoints
+out_file.write("\n\nLog of waypoints: ")
+out_file.write(waypoints)
 
 
 # Close vehicle object before exiting script
