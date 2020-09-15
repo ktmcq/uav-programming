@@ -228,7 +228,7 @@ def find_black_box():
 
             # check distance to target
             remaining_distance = get_distance_meters(vehicle.location.global_frame, target)
-            if remaining_distance <= .1:
+            if remaining_distance <= .5:
                 print("Waypoint reached")
                 break
 
@@ -278,7 +278,7 @@ if target_coords:
     # check distance to target
     while vehicle.mode.name=="GUIDED":
         remaining_distance = get_distance_meters(vehicle.location.global_frame, target_coords)
-        if remaining_distance <= .1:
+        if remaining_distance <= .5:
             print("Above black box")
             break
         time.sleep(nap)
