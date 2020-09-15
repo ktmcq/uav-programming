@@ -28,7 +28,7 @@ left = -86.243146
 nap = .2
 
 
-# FUNCTIONS
+# FUNCTIONS (and some usages of the functions)
 # hide black box
 def hide_black_box():
     vRange = top - bottom
@@ -48,11 +48,11 @@ def hide_black_box():
 
     print('Black Box Hidden')
     return (newLat, newLon, 0)
-# black box
+
+# hide black box and write to file
 hiddenCoords = hide_black_box()
 hiddenSpot = LocationGlobalRelative(float(hiddenCoords[0]), float(hiddenCoords[1]), float(hiddenCoords[2]))
 print("Black Box: " + str(hiddenSpot))
-# write black box location to file
 out_file = open("uav_output.txt", "w")
 out_file.write("Black box location: " + str(hiddenSpot.lat) + ", " + str(hiddenSpot.lon))
 
@@ -80,7 +80,6 @@ botright = LocationGlobalRelative(bottom, right, 0)
 height = get_distance_meters(topleft, botleft)
 width = get_distance_meters(botleft, botright)
 print("Field dimensions: " + str(width) + " x " + str(height) + " meters")
-
 
 
 # ping; returns location if within 5m of black box
@@ -150,7 +149,7 @@ def find_black_box():
         time.sleep(nap)
 
     # start the search algorithm
-    print("start grid search")
+    print("Starting grid search...")
     lat_dist = top - bottom
     lon_dist = right - left
     way = "right"
@@ -161,11 +160,8 @@ def find_black_box():
             i = 1
             while vehicle.mode.name=="GUIDED" and vehicle.location.global_relative_frame.lon <= right:
                 new_lon = left + i*lon_dist/10.
-                #print(new_lon)
                 target = LocationGlobalRelative(vehicle.location.global_relative_frame.lat, new_lon, 10)
                 vehicle.simple_goto(target, groundspeed=15)
-                #remaining_distance = get_distance_meters(vehicle.location.global_frame, target)
-                #print(remaining_distance)
                 while vehicle.mode.name=="GUIDED":
                     # check for black box on way to target
                     loc = ping(vehicle.location.global_relative_frame, hiddenSpot)
@@ -190,11 +186,8 @@ def find_black_box():
             i = 1
             while vehicle.mode.name=="GUIDED" and vehicle.location.global_relative_frame.lon >= left:
                 new_lon = right - i*lon_dist/10.
-                #print(new_lon)
                 target = LocationGlobalRelative(vehicle.location.global_relative_frame.lat, new_lon, 10)
                 vehicle.simple_goto(target, groundspeed=15)
-                #remaining_distance = get_distance_meters(vehicle.location.global_frame, target)
-                #print(remaining_distance)
                 while vehicle.mode.name=="GUIDED":
                     # check for black box on way to target
                     loc = ping(vehicle.location.global_relative_frame, hiddenSpot)
@@ -265,7 +258,7 @@ print ('Current position of vehicle is: %s' % vehicle.location.global_frame)
 
 
 # Arm and take off
-start = datetime.now().time()
+start = datetime.now().replace(microsecond=0)
 arm_and_takeoff(10) # go to relative altitude of 10m
 
 # Once at high enough altitude, find the box
@@ -282,35 +275,25 @@ if target_coords:
             print("Above black box")
             break
         time.sleep(nap)
+    print("Landing")
+    vehicle.mode = VehicleMode("LAND")
+
 else:
-    print("Black box not found")
+    print("Black box not found; Return to Launch")
+    vehicle.mode = VehicleMode("RTL")
 
 
 # lower down onto black box
-''' LOWER '''
-print("Lowering...")
+final_lat = vehicle.location.global_frame.lat
+final_lon = vehicle.location.global_frame.lon
+out_file.write("\nUAV landing location: " + str(final_lat) + ", " + str(final_lon))
 
 
 # print time data
-end = datetime.now().time()
-print("Starting time: " + str(start))
-print("Ending time: " + str(end))
-duration = datetime.combine(date.min, end) - datetime.combine(date.min, start)
-print("Time taken to locate box: " + str(duration.seconds))
-
-
-# RTL
-print("Returning to Launch")
-vehicle.mode = VehicleMode("RTL")
-
-
-# Get end time and print time data to file
-end_time = time.localtime()
-duration = end_time - start_time
-out_file.write("Start time: " + str(start_time))
-out_file.write("End time: " + str(end_time))
-duration = time.strftime("%M mins, %S secs")
-out_file.write("Duration: " + duration)
+end = datetime.now().replace(microsecond=0)
+out_file.write("\nStarting time: " + str(start))
+out_file.write("\nEnding time: " + str(end))
+out_file.write("\nTime taken to locate box: " + str(end - start) + "\n")
 
 
 # Close vehicle object before exiting script
