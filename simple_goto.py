@@ -307,7 +307,8 @@ out_file.write("\nTime taken to locate box: " + str(end - start))
 
 # print log of waypoints
 out_file.write("\n\nLog of waypoints: ")
-out_file.write(waypoints)
+out_file.write(str(waypoints))
+out_file.write("\n")
 
 
 # Close vehicle object before exiting script
