@@ -78,6 +78,9 @@ def moveUpDown(currCoords, direc, delta):
     elif direc == 2:
         newCoords = LocationGlobalRelative(currCoords.lat, currCoords.lon, currCoords.alt - delta)
 
+    # RETURN NEXT COORDS
+    return newCoords
+
 ''' 
 TEST
 
