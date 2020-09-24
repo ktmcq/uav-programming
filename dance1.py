@@ -61,6 +61,7 @@ def moveToCorners(currCoords, direc, delta, delta_lon):
         newCoords = LocationGlobalRelative(currCoords.lat - delta, currCoords.lon - delta, currCoords.alt)
 
     # RETURN NEXT COORDS
+    print("new coords: " + str(newCoords))
     return newCoords
 
 
