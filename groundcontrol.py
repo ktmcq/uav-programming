@@ -42,31 +42,35 @@ def get_distance_meters(loc1, loc2):
 	R = 6371
 	dLat = lat_box * math.pi/180 - lat_drone * math.pi/180
 	dLon = lon_box * math.pi/180 - lon_drone * math.pi/180
-	a = math.sin(dLat/2) * math.sin(dLat/2) + math.cos(lat_drone * math.pi/180) * math.cos(lat_box * math.pi/180) * math.sin(dLon/2) * math.sin(dLon/2)
+	a = math.sin(dLat/2) * math.sin(dLat/2) + math.\
+		cos(lat_drone * math.pi/180) * math.cos(lat_box * math.pi/180)\
+		* math.sin(dLon/2) * math.sin(dLon/2)
 	c = 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
 	d = R * c * 1000;
 	return d
 
 
 def connect_virtual_vehicle(instance, home):
-    sitl = SITL()
-    sitl.download('copter', '3.3', verbose=True)
-    instance_arg = '-I%s' %(str(instance))
-    print("Drone instance is: %s" % instance_arg)
-    home_arg = '--home=%s, %s,%s,180' % (str(home[0]), str(home[1]), str(home[2]))
-    sitl_args = [instance_arg, '--model', 'quad', home_arg]
-    sitl.launch(sitl_args, await_ready=True)
-    tcp, ip, port = sitl.connection_string().split(':')
-    port = str(int(port) + instance * 10)
-    conn_string = ':'.join([tcp, ip, port])
-    print('Connecting to vehicle on: %s' % conn_string)
+	sitl = SITL()
+	sitl.download('copter', '3.3', verbose=True)
+	instance_arg = '-I%s' %(str(instance))
+	speedup_arg = '--speedup=4'
+	print("Drone instance is: %s" % instance_arg)
+	home_arg = '--home=%s, %s,%s,180' % (str(home[0]),\
+		str(home[1]), str(home[2]))
+	sitl_args = [instance_arg, '--model', 'quad', home_arg,speedup_arg]
+	sitl.launch(sitl_args, await_ready=True)
+	tcp, ip, port = sitl.connection_string().split(':')
+	port = str(int(port) + instance * 10)
+	conn_string = ':'.join([tcp, ip, port])
+	print('Connecting to vehicle on: %s' % conn_string)
 
-    vehicle = connect(conn_string)
-    vehicle.wait_ready(timeout=120)
+	vehicle = connect(conn_string)
+	vehicle.wait_ready(timeout=120)
 
-    # Collections
-    copters.append(vehicle)
-    sitls.append(sitl)
+	# Collections
+	copters.append(vehicle)
+	sitls.append(sitl)
 
 def are_copters_guided():
 	result = True
@@ -202,8 +206,13 @@ if XDANCE:
 			while are_copters_guided():
 				at_destination = True
 				for i in range(0, 5):
-					temp_coords = (
-					copters_plot[i].append()
+					temp_lat = copters[i].location.global_relative_frame.\
+								lat 
+					temp_lon = copters[i].location.global_relative_frame.\
+								lon 
+
+					copters_plot_lat[i].append(temp_lat)
+					copters_plot_lon[i].append(temp_lon)			
 					print("Copter " + str(i) + " at location " + \
 						str(copters[i].location.global_relative_frame))
 					remaining_distance = get_distance_meters(copters[i].\
@@ -216,6 +225,13 @@ if XDANCE:
 				if at_destination:
 					print("All drones have reached their waypoints")
 					break
+
+		copter_colors = ['ro','bo','ko','mo', 'go']
+		for i in range(5):
+			plt.plot(copters_plot_lat[i],copters_plot_lon[i],\
+				copter_colors[i])
+			
+		plt.show()
 		print("land!")
 		break
 
