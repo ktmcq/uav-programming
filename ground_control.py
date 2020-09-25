@@ -16,16 +16,23 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 
-from dance1 import moveAroundSquare, moveToCorners, moveUpDown
+from dance1 import moveAroundBoxes, moveToCorners, moveUpDown
+from dance2 import moveAroundSquare, moveToCorners, moveUpDown
 
-XDANCE = True  
+
+'''
+True for BOXES DANCE
+False for SQUARE DANCE
+'''
+BOXES_DANCE = False 
+
 
 copters = []
 sitls = []
 drone_models = []
 
-lat_delta = .0003
-lon_delta = .0003
+latlon_delta = .0003
+latlon_delta2 = .0003185
 alt_delta = 1.
 
 
@@ -154,7 +161,7 @@ copters_plot_lon = [[],[],[],[],[]]
 
 # Copter list
 # four corners dance
-if XDANCE:
+if BOXES_DANCE:
 	# Top Left
 	coord2 = [base_coordinate[0] + 0.0001, base_coordinate[1] + 0.0001, 0]
 	
@@ -189,13 +196,13 @@ if XDANCE:
 			coords.append(moveUpDown(copters[0].location.\
 				global_relative_frame, 1, alt_delta))
 			coords.append(moveToCorners(copters[1].location.\
-				global_relative_frame, 1, lat_delta, lon_delta))
+				global_relative_frame, 1, latlon_delta))
 			coords.append(moveToCorners(copters[2].location.\
-				global_relative_frame, 2, lat_delta, lon_delta))
+				global_relative_frame, 2, latlon_delta))
 			coords.append(moveToCorners(copters[3].location.\
-				global_relative_frame, 3, lat_delta, lon_delta))
+				global_relative_frame, 3, latlon_delta))
 			coords.append(moveToCorners(copters[4].location.\
-				global_relative_frame, 4, lat_delta, lon_delta))	
+				global_relative_frame, 4, latlon_delta))	
 
 			# send drones to next coordinates
 			for k in range(0, 5):
@@ -235,10 +242,10 @@ if XDANCE:
 			# calculate next coordinates
 				coords = []
 				coords.append(moveUpDown(copters[0].location.global_relative_frame, directions[0], alt_delta))
-				coords.append(moveAroundSquare(copters[1].location.global_relative_frame, directions[1], lat_delta, lon_delta))
-				coords.append(moveAroundSquare(copters[2].location.global_relative_frame, directions[2], lat_delta, lon_delta))
-				coords.append(moveAroundSquare(copters[3].location.global_relative_frame, directions[3], lat_delta, lon_delta))
-				coords.append(moveAroundSquare(copters[4].location.global_relative_frame, directions[4], lat_delta, lon_delta))
+				coords.append(moveAroundBoxes(copters[1].location.global_relative_frame, directions[1], latlon_delta))
+				coords.append(moveAroundBoxes(copters[2].location.global_relative_frame, directions[2], latlon_delta))
+				coords.append(moveAroundBoxes(copters[3].location.global_relative_frame, directions[3], latlon_delta))
+				coords.append(moveAroundBoxes(copters[4].location.global_relative_frame, directions[4], latlon_delta))
 
 				# send drones to next coordinates
 				for i in range(0, 5):
@@ -294,10 +301,143 @@ if XDANCE:
 
 # line dance
 else:
+	# Top Left
+	coord2 = [base_coordinate[0] + 0.0001, base_coordinate[1] + 0.0001, 0]
+	
+	# Top Right
+	coord3 = [base_coordinate[0] + 0.0001, base_coordinate[1] - 0.0001, 0]
+	
+	# Bottom Left 
+	coord4 = [base_coordinate[0] - 0.0001, base_coordinate[1] + 0.0001, 0]
+	
+	# Bottom Right
+	coord5 = [base_coordinate[0] - 0.0001, base_coordinate[1] - 0.0001, 0]
+	
+	# Base Coordinate is the Middle
+	starting_coordinates.append(base_coordinate)
+	starting_coordinates.append(coord2)
+	starting_coordinates.append(coord3)
+	starting_coordinates.append(coord4)
+	starting_coordinates.append(coord5)
+	
 	for n in range(5):
-		coordinates = [coordinates[0], \
-		coordinates[1]-(0.00005*n),coordinates[2]]
-		connect_virtual_vehicle(n,starting_coordinates)
+		connect_virtual_vehicle(n, starting_coordinates[n])
+
+	# Arm and takeoff to 10 meters
+	arm_and_takeoff(10) 
+
+    # Main loop
+	while are_copters_guided():
+		# SEND NON-CENTER DRONES TO THE CORNER
+		for j in range(0, 5):
+			# calculate next coordinates
+			coords = []
+			coords.append(moveUpDown(copters[0].location.\
+				global_relative_frame, 1, alt_delta))
+			coords.append(moveToCorners(copters[1].location.\
+				global_relative_frame, 1, latlon_delta))
+			coords.append(moveToCorners(copters[2].location.\
+				global_relative_frame, 2, latlon_delta))
+			coords.append(moveToCorners(copters[3].location.\
+				global_relative_frame, 3, latlon_delta))
+			coords.append(moveToCorners(copters[4].location.\
+				global_relative_frame, 4, latlon_delta))	
+
+			# send drones to next coordinates
+			for k in range(0, 5):
+				copters[k].simple_goto(coords[k], groundspeed=15)
+
+			# wait until they all get to their waypoints
+			while are_copters_guided():
+				at_destination = True
+				for i in range(0, 5):
+					temp_lat = copters[i].location.global_relative_frame.\
+						lat 
+					temp_lon = copters[i].location.global_relative_frame.\
+						lon 
+					copters_plot_lat[i].append(temp_lat)
+					copters_plot_lon[i].append(temp_lon)			
+					print("Copter " + str(i) + " at location " + \
+						str(copters[i].location.global_relative_frame))
+					remaining_distance = get_distance_meters(copters[i].\
+						location.global_relative_frame, coords[i])
+					if remaining_distance > 1:
+						at_destination = False
+				time.sleep(1)
+				print()
+
+				if at_destination:
+					print("All drones have reached their waypoints")
+					break
+
+
+		# MOVE AROUND THE SQUARE
+		# give the drones appropriate starting directions based on dance1.py
+		directions = [0, 2, 3, 1, 4]
+		# have them move continuously (for count/4 # of times around the square)
+		count = 4
+		while are_copters_guided():
+			for i in range(0, 10):
+			# calculate next coordinates
+				coords = []
+				coords.append(moveUpDown(copters[0].location.global_relative_frame, directions[0], alt_delta))
+				coords.append(moveAroundSquare(copters[1].location.global_relative_frame, directions[1], latlon_delta2))
+				coords.append(moveAroundSquare(copters[2].location.global_relative_frame, directions[2], latlon_delta2))
+				coords.append(moveAroundSquare(copters[3].location.global_relative_frame, directions[3], latlon_delta2))
+				coords.append(moveAroundSquare(copters[4].location.global_relative_frame, directions[4], latlon_delta2))
+
+				# send drones to next coordinates
+				for i in range(0, 5):
+					copters[i].simple_goto(coords[i], groundspeed=15)
+
+				# wait until they all get to their waypoints
+				while are_copters_guided():
+					at_destination = True
+					for i in range(0, 5):
+						temp_lat = copters[i].location.global_relative_frame.\
+								lat 
+						temp_lon = copters[i].location.global_relative_frame.\
+								lon 
+
+						copters_plot_lat[i].append(temp_lat)
+						copters_plot_lon[i].append(temp_lon)	
+						print("copter " + str(i) + " at location " + str(copters[i].location.global_relative_frame))
+						remaining_distance = get_distance_meters(copters[i].location.global_relative_frame, coords[i])
+						#print(remaining_distance)
+						if remaining_distance > 1:
+							at_destination = False
+					time.sleep(1)
+					print()
+
+					if at_destination:
+						print("All drones have reached their waypoints")
+						break
+
+			# change directions
+			# middle copter
+			if directions[0] == 1:
+				directions[0] = 0
+			else:
+				directions[0] = 1
+			# corner copters
+			for i in range(1, 5):
+				if directions[i] == 1:
+					directions[i] = 2
+				elif directions[i] == 2:
+					directions[i] = 3
+				elif directions[i] == 3:
+					directions[i] = 4
+				elif directions[i] == 4:
+					directions[i] = 1
+
+			# update count
+			count -= 1
+			# check count
+			if count == 0:
+				break
+		# finished with X` dance
+		break
+
 
 
 # plot the path of the drones

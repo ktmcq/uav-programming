@@ -13,7 +13,7 @@ from datetime import datetime, date
 '''
 Returns the next coordinates for the drones while moving around the square
 '''
-def moveAroundBoxes(currCoords, direc, delta):
+def moveAroundSquare(currCoords, direc, delta):
     newCoords = LocationGlobalRelative(currCoords.lat, currCoords.lon, currCoords.alt)
 
     # MODIFY COORDINATES BASED ON WHICH CORNER
