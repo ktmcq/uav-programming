@@ -28,7 +28,6 @@ lat_delta = .0003
 lon_delta = .0003
 alt_delta = 1.
 
-print("UGH")
 
 # get the distance from two locations in meters
 def get_distance_meters(loc1, loc2):
@@ -275,8 +274,6 @@ else:
 		coordinates = [coordinates[0], \
 		coordinates[1]-(0.00005*n),coordinates[2]]
 		connect_virtual_vehicle(n,starting_coordinates)
-
-
 
 
 # Land them
