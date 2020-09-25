@@ -183,7 +183,7 @@ if XDANCE:
     # Main loop
 	while are_copters_guided():
 		# SEND NON-CENTER DRONES TO THE CORNER
-		for j in range(0, 5):
+		for j in range(0, 7):
 			# calculate next coordinates
 			coords = []
 			coords.append(moveUpDown(copters[0].location.\
@@ -206,10 +206,9 @@ if XDANCE:
 				at_destination = True
 				for i in range(0, 5):
 					temp_lat = copters[i].location.global_relative_frame.\
-								lat 
+						lat 
 					temp_lon = copters[i].location.global_relative_frame.\
-								lon 
-
+						lon 
 					copters_plot_lat[i].append(temp_lat)
 					copters_plot_lon[i].append(temp_lon)			
 					print("Copter " + str(i) + " at location " + \
@@ -225,26 +224,21 @@ if XDANCE:
 					print("All drones have reached their waypoints")
 					break
 
-		copter_colors = ['ro','bo','ko','mo', 'go']
-		for i in range(5):
-			plt.plot(copters_plot_lat[i],copters_plot_lon[i],\
-				copter_colors[i])
-			
-		plt.show()
-		print("land!")
-		break
 
-		'''
 		# MOVE AROUND THE SQUARE
+		# give the drones appropriate starting directions based on dance1.py
+		directions = [0, 2, 3, 1, 4]
+		# have them move continuously (for count/4 # of times around the square)
+		count = 4
 		while are_copters_guided():
 			for i in range(0, 5):
 			# calculate next coordinates
 				coords = []
-				coords.append(moveUpDown(copters[0].location.global_relative_frame, 1, alt_delta))
-				coords.append(moveAroundSquare(copters[1].location.global_relative_frame, 1, lat_delta, lon_delta))
-				coords.append(moveAroundSquare(copters[2].location.global_relative_frame, 2, lat_delta, lon_delta))
-				coords.append(moveAroundSquare(copters[3].location.global_relative_frame, 3, lat_delta, lon_delta))
-				coords.append(moveAroundSquare(copters[4].location.global_relative_frame, 4, lat_delta, lon_delta))
+				coords.append(moveUpDown(copters[0].location.global_relative_frame, directions[0], alt_delta))
+				coords.append(moveAroundSquare(copters[1].location.global_relative_frame, directions[1], lat_delta, lon_delta))
+				coords.append(moveAroundSquare(copters[2].location.global_relative_frame, directions[2], lat_delta, lon_delta))
+				coords.append(moveAroundSquare(copters[3].location.global_relative_frame, directions[3], lat_delta, lon_delta))
+				coords.append(moveAroundSquare(copters[4].location.global_relative_frame, directions[4], lat_delta, lon_delta))
 
 				# send drones to next coordinates
 				for i in range(0, 5):
@@ -254,6 +248,13 @@ if XDANCE:
 				while are_copters_guided():
 					at_destination = True
 					for i in range(0, 5):
+						temp_lat = copters[i].location.global_relative_frame.\
+								lat 
+						temp_lon = copters[i].location.global_relative_frame.\
+								lon 
+
+						copters_plot_lat[i].append(temp_lat)
+						copters_plot_lon[i].append(temp_lon)	
 						print("copter " + str(i) + " at location " + str(copters[i].location.global_relative_frame))
 						remaining_distance = get_distance_meters(copters[i].location.global_relative_frame, coords[i])
 						#print(remaining_distance)
@@ -266,7 +267,30 @@ if XDANCE:
 						print("All drones have reached their waypoints")
 						break
 
-		'''
+			# change directions
+			# middle copter
+			if directions[0] == 1:
+				directions[0] = 0
+			else:
+				directions[0] = 1
+			# corner copters
+			for i in range(1, 5):
+				if directions[i] == 1:
+					directions[i] = 2
+				elif directions[i] == 2:
+					directions[i] = 3
+				elif directions[i] == 3:
+					directions[i] = 4
+				elif directions[i] == 4:
+					directions[i] = 1
+
+			# update count
+			count -= 1
+			# check count
+			if count == 0:
+				break
+		# finished with X` dance
+		break
 
 # line dance
 else:
@@ -276,12 +300,24 @@ else:
 		connect_virtual_vehicle(n,starting_coordinates)
 
 
+# plot the path of the drones
+copter_colors = ['ro','bo','ko','mo', 'go']
+for i in range(5):
+	plt.plot(copters_plot_lat[i],copters_plot_lon[i],\
+		copter_colors[i])
+plt.show()
+print("land!")
+
+
 # Land them
 land_drones()
+print("after land drones")
 
 # Close all vehicles
 for c in copters:
   c.close()
+
+print("after close drones")
 
 # Shut down simulators
 for s in sitls:
